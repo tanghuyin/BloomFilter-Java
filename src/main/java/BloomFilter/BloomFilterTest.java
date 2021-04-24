@@ -7,6 +7,8 @@ public class BloomFilterTest {
         BloomFilterPolicy bloomFilterPolicy = new BloomFilterPolicy(20);
         String[] urls = new String[]{"www.baidu.com", "www.google.com"};
         bloomFilterPolicy.createFilter(urls);
-        System.out.println(bloomFilterPolicy.getBitSet());
+        System.out.println(bloomFilterPolicy.urlMayMatch("www.baidu.com"));
+        System.out.println(bloomFilterPolicy.urlMayMatch("www.google.com"));
+        System.out.println(bloomFilterPolicy.urlMayMatch("www.bytedance.com"));
     }
 }
