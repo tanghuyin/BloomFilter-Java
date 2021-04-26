@@ -3,10 +3,12 @@ package BloomFilter;
 import org.apache.commons.codec.digest.MurmurHash2;
 
 import java.util.BitSet;
+import java.util.List;
 
 public class BloomFilterPolicy {
-    private int bitsPerKey;
+    private final int bitsPerKey;
     private BitSet bitSet;
+    private int modules;
     /**
      * k means the k hash functions, however, we don't use k hash function here, we use double hash to imitate
      * e.g
@@ -33,6 +35,27 @@ public class BloomFilterPolicy {
         return sb.toString();
     }
 
+    public void createFilter(List<String> urls) {
+        int n = urls.size();
+        int bits = n * bitsPerKey;
+        if (bits < 64) bits = 64;
+
+        int bytes = (bits + 7) / 8;
+        bits = bytes * 8;
+        bitSet = new BitSet(bits);
+        this.modules = bits;
+
+        for (String url : urls) {
+            int h = hashHelper(url);
+            int delta = (h >> 17) | (h << 15);
+            for (int j = 0; j < k; j++) {
+                int bitPos = h % bits;
+                bitSet.set(bitPos);
+                h = getPositiveValue(h + delta); // the factor before hash2 increase
+            }
+        }
+    }
+
     public void createFilter(String[] urls) {
         int n = urls.length;
         int bits = n * bitsPerKey;
@@ -54,14 +77,13 @@ public class BloomFilterPolicy {
     }
 
     public boolean urlMayMatch(String url) {
-        int bits = bitSet.size(); // length is not correct, length is the Most Significant 1's position plus 1
-        if (bits < 2) return false; // special check?
+        if (this.modules < 2) return false; // special check?
 
         int h = hashHelper(url);
         int delta = (h >> 17) | (h << 15);
         // k hash function check
         for (int i = 0; i < k; i++) {
-            int bitPos = h % bits;
+            int bitPos = h % this.modules;
             if (!bitSet.get(bitPos)) {
                 return false;
             }
@@ -82,5 +104,9 @@ public class BloomFilterPolicy {
 
     private int getPositiveValue(int value) {
         return value < 0 ? Integer.MAX_VALUE + value : value;
+    }
+
+    public String toString() {
+        return "" + bitSet.size();
     }
 }
